@@ -1,0 +1,9 @@
+/* AUTOMATICALLY GENERATED */
+#ifndef __REDFAT_CONFIG_H
+#define __REDFAT_CONFIG_H
+
+#define _REDFAT_SIZES ((size_t *)0x100000)
+#define _REDFAT_MAGICS ((uint64_t *)0x180000)
+#define _REDFAT_REGION_SIZE 34359738368ull
+
+#endif	/* __REDFAT_CONFIG_H */
