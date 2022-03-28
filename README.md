@@ -103,6 +103,9 @@ Some features can also be statically enabled using the `build.sh` script (see
 * `REDFAT_ASLR=1`: Enables *Address Space Layout Randomization* (ASLR) for
   heap allocations.
   Default: *enabled*.
+* `REDFAT_CPU_CHECK=0`: Disable the CPU compatibility check.
+  This is useful for some virtual machines that incorrectly indicate that
+  Intel BMI/BMI2 is not supported.
 
 ## History
 

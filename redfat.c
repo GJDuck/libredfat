@@ -198,11 +198,12 @@ REDFAT_NOINLINE void redfat_warning(const char *format, ...)
 /*
  * Get an option value.
  */
-static ssize_t redfat_get_option(const char *option, ssize_t lb, ssize_t ub)
+static ssize_t redfat_get_option(const char *option, ssize_t lb, ssize_t ub,
+    ssize_t _default)
 {
     const char *val = getenv(option);
     if (val == NULL)
-        return 0;
+        return _default;
     if (strcmp(val, "true") == 0)
         return 1;
     if (strcmp(val, "false") == 0)
@@ -255,37 +256,43 @@ void REDFAT_CONSTRUCTOR redfat_init(void)
     redfat_mutex_init(&redfat_print_mutex);
     redfat_mutex_init(&redfat_rand_mutex);
 
+    // Options:
+    redfat_option_profile_mode = redfat_get_option("REDFAT_PROFILE", 0, 1,
+        false);
+#ifndef REDFAT_ZERO
+    redfat_option_zero_mode = redfat_get_option("REDFAT_ZERO", 0, 1, false);
+#endif
+#ifndef REDFAT_CANARY
+    redfat_option_canary_mode = redfat_get_option("REDFAT_CANARY", 0, 1,
+        false);
+#endif
+#ifndef REDFAT_QUARANTINE
+    redfat_option_quarantine = redfat_get_option("REDFAT_QUARANTINE", 0,
+        UINT32_MAX, 0);
+#endif
+#ifndef REDFAT_ASLR 
+    redfat_option_aslr_mode = redfat_get_option("REDFAT_ASLR", 0, 1, true);
+#endif
+    redfat_option_test_rate = redfat_get_option("REDFAT_TEST",
+        0, UINT16_MAX, 0);
+    bool redfat_option_cpu_check = redfat_get_option("REDFAT_CPU_CHECK", 0, 1,
+        true);
+
     // Basic sanity checks:
     if (sizeof(void *) != sizeof(uint64_t))
         redfat_error("incompatible architecture (not x86-64)");
     if (sysconf(_SC_PAGESIZE) != REDFAT_PAGE_SIZE)
         redfat_error("incompatible system page size (expected %u; got %ld)",
             REDFAT_PAGE_SIZE, sysconf(_SC_PAGESIZE));
-    uint32_t eax, ebx, ecx, edx;
-    REDFAT_CPUID(7, 0, eax, ebx, ecx, edx);
-    if (((ebx >> 3) & 1) == 0 || ((ebx >> 8) & 1) == 0)
-        redfat_error("incompatible architecture (no BMI/BMI2 support)");
-
-    // Options:
-    redfat_option_profile_mode = redfat_get_option("REDFAT_PROFILE", 0, 1);
-#ifndef REDFAT_ZERO
-    redfat_option_zero_mode    = redfat_get_option("REDFAT_ZERO", 0, 1);
-#endif
-#ifndef REDFAT_CANARY
-    redfat_option_canary_mode  = redfat_get_option("REDFAT_CANARY", 0, 1);
-#endif
-#ifndef REDFAT_QUARANTINE
-    redfat_option_quarantine   = redfat_get_option("REDFAT_QUARANTINE",
-        0, UINT32_MAX);
-#endif
-#ifndef REDFAT_ASLR 
-    if (getenv("REDFAT_ASLR") != NULL)
-        redfat_option_aslr_mode = redfat_get_option("REDFAT_ASLR", 0, 1);
-    else
-        redfat_option_aslr_mode = true;
-#endif
-    redfat_option_test_rate    = redfat_get_option("REDFAT_TEST",
-        0, UINT16_MAX);
+    if (redfat_option_cpu_check)
+    {
+        uint32_t eax, ebx, ecx, edx;
+        REDFAT_CPUID(7, 0, eax, ebx, ecx, edx);
+        if (((ebx >> 3) & 1) == 0 || ((ebx >> 8) & 1) == 0)
+            redfat_error("incompatible architecture (no BMI/BMI2 support)\n"
+                "              (define REDFAT_CPU_CHECK=0 to disable this "
+                    "check)");
+    }
  
     // Random seed memory:
     redfat_seed = (uint8_t *)mmap(NULL, REDFAT_PAGE_SIZE,
