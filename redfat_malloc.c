@@ -173,9 +173,18 @@ static void redfat_malloc_init(void)
         global->batchsz = 2 * REDFAT_PAGE_SIZE / size;
         global->batchsz = (global->batchsz == 0? 1: global->batchsz);
         global->batchsz = (global->batchsz >= 256? 256: global->batchsz);
-        global->batchsz = (global->size == REDFAT_PAGE_SIZE? 1: global->batchsz);
+        global->batchsz =
+            (global->size == REDFAT_PAGE_SIZE? 1: global->batchsz);
  
         baseidx += (REDFAT_HEAP_MEMORY_SIZE / size) + /*gap=*/16;
+
+        if (redfat_option_reserve)
+        {
+            void *ptr = mmap(heapptr, REDFAT_REGION_SIZE, PROT_READ,
+                MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
+            if (ptr != (void *)heapptr)
+                redfat_error("failed to mmap memory: %s", strerror(errno));
+        }
     }
 
     uintptr_t base = (REDFAT_NUM_REGIONS + 1) * REDFAT_REGION_SIZE;
@@ -308,8 +317,10 @@ static uint32_t redfat_global_pop_fresh(redfat_global_t global)
             if (map_size < REDFAT_BIG_OBJECT)
                 map_size = REDFAT_BIG_OBJECT;
             errno = 0;
+            int flags = MAP_PRIVATE | MAP_ANONYMOUS |
+                (redfat_option_reserve? MAP_FIXED: 0x0);
             uint8_t *ptr = (uint8_t *)mmap(map_ptr, map_size,
-                PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+                PROT_READ | PROT_WRITE, flags, -1, 0);
             if (ptr != map_ptr && errno != 0)
                 redfat_error("mmap() failed: %s", strerror(errno));
             if (ptr != map_ptr)

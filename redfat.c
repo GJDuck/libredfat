@@ -89,6 +89,8 @@ static REDFAT_DATA bool     redfat_option_aslr_mode    = false;
 #else
 static REDFAT_DATA uint32_t redfat_option_quarantine   = 0;
 #endif
+static REDFAT_DATA int redfat_option_signal            = 0;
+static REDFAT_DATA bool redfat_option_reserve          = false;
 static REDFAT_DATA uint32_t redfat_option_test_rate    = 0;
 
 static REDFAT_DATA uint64_t redfat_canary = 0x0;
@@ -129,6 +131,16 @@ static void redfat_rand(void *buf0, size_t len)
         buf++;
     }
     redfat_mutex_unlock(&redfat_rand_mutex);
+}
+
+/*
+ * Abort.
+ */
+static REDFAT_NORETURN void redfat_abort(void)
+{
+    if (redfat_option_signal >= 1 && redfat_option_signal <= 31)
+        raise(redfat_option_signal);
+    abort();
 }
 
 /*
@@ -181,7 +193,7 @@ REDFAT_NOINLINE REDFAT_NORETURN void redfat_error(const char *format, ...)
     va_start(ap, format);
     redfat_message(format, /*err=*/true, ap);
     va_end(ap);
-    abort();
+    redfat_abort();
 }
 
 /*
@@ -277,6 +289,8 @@ void REDFAT_CONSTRUCTOR redfat_init(void)
         0, UINT16_MAX, 0);
     bool redfat_option_cpu_check = redfat_get_option("REDFAT_CPU_CHECK", 0, 1,
         true);
+    redfat_option_signal  = redfat_get_option("REDFAT_SIGNAL", 1, 31, 0);
+    redfat_option_reserve = redfat_get_option("REDFAT_RESERVE", 0, 1, false);
 
     // Basic sanity checks:
     if (sizeof(void *) != sizeof(uint64_t))
