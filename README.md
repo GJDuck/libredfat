@@ -104,8 +104,11 @@ Some features can also be statically enabled using the `build.sh` script (see
   heap allocations.
   Default: *enabled*.
 * `REDFAT_CPU_CHECK=0`: Disable the CPU compatibility check.
-  This is useful for some virtual machines that incorrectly indicate that
-  Intel BMI/BMI2 is not supported.
+  This is useful for some virtual machines (e.g., VirtualBox) that
+  incorrectly indicate that Intel BMI/BMI2 is not supported.
+* `REDFAT_SIGNAL=SIG`: If an error occurs, raise signal `SIG` to terminate
+  the program (or else fall back to abort).
+* `REDFAT_LOG=N`: Set `N` to be the log-level.
 
 ## History
 

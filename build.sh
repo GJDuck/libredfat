@@ -26,17 +26,12 @@ do
             VAL="${OPTION#*=}"
             EXTRA_OPTS="$EXTRA_OPTS -DREDFAT_QUARANTINE=$VAL"
             ;;
-        --log)
-            EXTRA_OPTS="$EXTRA_OPTS -DREDFAT_LOG=1"
-            ;;
         --help)
             echo "usage: $0 [OPTIONS]"
             echo
             echo "OPTIONS:"
             echo "    --debug"
             echo "        Compile with debug symbols"
-            echo "    --log"
-            echo "        Enable malloc() logging to stderr"
             echo "    --aslr={1,0}"
             echo "        Enable (disable) ASLR"
             echo "    --canary={1,0}"

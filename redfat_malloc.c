@@ -8,7 +8,7 @@
  * 
  * Gregory J. Duck.
  *
- * Copyright (c) 2022 The National University of Singapore.
+ * Copyright (c) 2023 The National University of Singapore.
  * All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -33,14 +33,11 @@
 #include <assert.h>
 #include <pthread.h>
 
-#ifndef REDFAT_LOG
-#define REDFAT_DEBUG(msg, ...)          /* NOP */
-#else
 #define REDFAT_DEBUG(msg, ...)                                          \
     do {                                                                \
-        fprintf(stderr, (msg), ##__VA_ARGS__);                          \
+        if (__builtin_expect(redfat_option_log >= 3, false))            \
+            fprintf(stderr, (msg), ##__VA_ARGS__);                      \
     } while (false)
-#endif
 
 #define REDFAT_BIG_OBJECT           (16 * REDFAT_PAGE_SIZE)
 #define REDFAT_NUM_PAGES(size)                                          \

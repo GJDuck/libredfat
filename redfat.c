@@ -8,7 +8,7 @@
  * 
  * Gregory J. Duck.
  *
- * Copyright (c) 2022 The National University of Singapore.
+ * Copyright (c) 2023 The National University of Singapore.
  * All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -92,6 +92,7 @@ static REDFAT_DATA uint32_t redfat_option_quarantine   = 0;
 static REDFAT_DATA int redfat_option_signal            = 0;
 static REDFAT_DATA bool redfat_option_reserve          = false;
 static REDFAT_DATA uint32_t redfat_option_test_rate    = 0;
+static REDFAT_DATA int redfat_option_log               = 0;
 
 static REDFAT_DATA uint64_t redfat_canary = 0x0;
 
@@ -165,6 +166,9 @@ static REDFAT_NOINLINE void redfat_print_banner(void)
 static REDFAT_NOINLINE void redfat_message(const char *format, bool err,
     va_list ap)
 {
+    if (redfat_option_log < 1)
+        return;
+
     redfat_mutex_lock(&redfat_print_mutex);
 
     // (1) Print the error:
@@ -262,6 +266,7 @@ void REDFAT_CONSTRUCTOR redfat_init(void)
     if (redfat_inited)
         return;
     redfat_inited = true;
+    redfat_option_log = 2;
 
     redfat_libc_init();
 
@@ -269,6 +274,8 @@ void REDFAT_CONSTRUCTOR redfat_init(void)
     redfat_mutex_init(&redfat_rand_mutex);
 
     // Options:
+    redfat_option_log = redfat_get_option("REDFAT_LOG", 0, 10,
+        redfat_option_log);
     redfat_option_profile_mode = redfat_get_option("REDFAT_PROFILE", 0, 1,
         false);
 #ifndef REDFAT_ZERO
@@ -289,7 +296,7 @@ void REDFAT_CONSTRUCTOR redfat_init(void)
         0, UINT16_MAX, 0);
     bool redfat_option_cpu_check = redfat_get_option("REDFAT_CPU_CHECK", 0, 1,
         true);
-    redfat_option_signal  = redfat_get_option("REDFAT_SIGNAL", 1, 31, 0);
+    redfat_option_signal  = redfat_get_option("REDFAT_SIGNAL", 1, _NSIG, 0);
     redfat_option_reserve = redfat_get_option("REDFAT_RESERVE", 0, 1, false);
 
     // Basic sanity checks:
@@ -434,7 +441,7 @@ void REDFAT_CONSTRUCTOR redfat_init(void)
 
 void REDFAT_DESTRUCTOR redfat_fini(void)
 {
-    if (!redfat_option_profile_mode)
+    if (!redfat_option_profile_mode || redfat_option_log < 2)
         return;
     fprintf(stderr, "total.allocs   = %zu (%zubytes)\n",
         redfat_profile_alloc_count, redfat_profile_alloc_bytes);
